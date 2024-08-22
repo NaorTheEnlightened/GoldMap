@@ -1,0 +1,45 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "debug": "nuxi dev --inspect",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.1",
+    "@pinia/nuxt": "^0.5.1",
+    "@prisma/client": "^5.16.2",
+    "@types/leaflet": "^1.9.12",
+    "@vue-leaflet/vue-leaflet": "^0.10.1",
+    "@vueuse/nuxt": "^10.11.0",
+    "axios": "^1.7.2",
+    "bcrypt": "^5.1.1",
+    "fast-xml-parser": "^4.4.1",
+    "flag-icons": "^7.2.3",
+    "google-auth-library": "^9.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "leaflet": "^1.9.4",
+    "nuxt": "^3.12.3",
+    "nuxt-vue3-google-signin": "^0.0.11",
+    "pinia": "^2.1.7",
+    "vue": "latest",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "prisma": "^5.16.2",
+    "tailwindcss": "^3.4.5"
+  },
+  "overrides": {
+    "vue": "latest"
+  }
+}
