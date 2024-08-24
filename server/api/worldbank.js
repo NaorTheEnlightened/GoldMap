@@ -17,35 +17,96 @@ const indicators = {
   // timeToStartBusiness: 'IC.REG.DURS'
 };
 
-const parser = new XMLParser();
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_',
+});
 
 const fetchOECDData = async (countryCode) => {
-  const url = `https://sdmx.oecd.org/public/rest/data/OECD.WISE.INE,DSD_WISE_IDD@DF_IDD,1.0/${countryCode}.A.INC_DISP.MEDIAN.XDC_HH_EQ._T.METH2012.D_CUR._Z?startPeriod=2011&endPeriod=2023&dimensionAtObservation=AllDimensions`;
+  const url = `https://sdmx.oecd.org/public/rest/data/OECD.WISE.INE,DSD_WISE_IDD@DF_IDD,1.0/${countryCode}.A.INC_DISP.MEDIAN.XDC_HH_EQ._T.METH2012.D_CUR._Z?startPeriod=2015&endPeriod=2023&dimensionAtObservation=AllDimensions&format=jsondata`;
 
   try {
     const response = await axios.get(url);
-    const result = parser.parse(response.data);
-    const observations =
-      result['message:GenericData']['message:DataSet']['generic:Obs'];
+    const data = response.data.data;
+
+    if (
+      !data ||
+      !data.dataSets ||
+      !data.dataSets[0] ||
+      !data.dataSets[0].observations
+    ) {
+      console.error('Unexpected data structure:', data);
+      return null;
+    }
+
+    const observations = data.dataSets[0].observations;
+    const timePeriods = data.structures[0].dimensions.observation.find(
+      (dim) => dim.id === 'TIME_PERIOD',
+    ).values;
 
     let latestData = null;
-    for (const obs of observations) {
-      const year = obs['generic:ObsKey']['generic:Value'].find(
-        (v) => v['@_id'] === 'TIME_PERIOD',
-      )['@_value'];
-      const value = obs['generic:ObsValue']['@_value'];
-      const currency = obs['generic:Attributes']['generic:Value'].find(
-        (v) => v['@_id'] === 'CURRENCY',
-      )['@_value'];
+    for (const [key, value] of Object.entries(observations)) {
+      const timeIndex = parseInt(key.split(':')[9], 10);
+      const year = timePeriods[timeIndex].id;
+      const disposableIncome = value[0];
+      const currency = data.structures[0].attributes.observation.find(
+        (attr) => attr.id === 'CURRENCY',
+      ).values[0].id;
 
       if (!latestData || year > latestData.year) {
-        latestData = { year, value, currency };
+        latestData = { year, value: disposableIncome, currency };
       }
     }
 
     return latestData;
   } catch (error) {
     console.error('Error fetching OECD data:', error);
+    return null;
+  }
+};
+
+const fetchOECDHouseholdData = async (countryCode) => {
+  const url = `https://sdmx.oecd.org/public/rest/data/OECD.WISE.INE,DSD_WISE_IDD@DF_IDD,1.0/${countryCode}.A.HSH..._T..D_CUR.?startPeriod=2015&dimensionAtObservation=AllDimensions&format=jsondata`;
+
+  try {
+    const response = await axios.get(url);
+    const data = response.data.data;
+
+    if (
+      !data ||
+      !data.dataSets ||
+      !data.dataSets[0] ||
+      !data.dataSets[0].observations
+    ) {
+      console.error('Unexpected data structure:', data);
+      return null;
+    }
+
+    const observations = data.dataSets[0].observations;
+    const timePeriods = data.structures[0].dimensions.observation.find(
+      (dim) => dim.id === 'TIME_PERIOD',
+    ).values;
+    const measures = data.structures[0].dimensions.observation.find(
+      (dim) => dim.id === 'MEASURE',
+    ).values;
+
+    let latestData = {};
+    for (const [key, value] of Object.entries(observations)) {
+      const [, , measureIndex, , , , , , timeIndex] = key
+        .split(':')
+        .map(Number);
+      const year = timePeriods[timeIndex].id;
+      const measure = measures[measureIndex].id;
+      const householdValue = value[0];
+
+      if (!latestData[measure] || year > latestData[measure].year) {
+        latestData[measure] = { year, value: householdValue };
+      }
+    }
+
+    return latestData;
+  } catch (error) {
+    console.error('Error fetching OECD household data:', error);
     return null;
   }
 };
@@ -111,6 +172,12 @@ export default defineEventHandler(async (event) => {
       if (usdValue !== null) {
         data.oecdDisposableIncome.usdValue = usdValue.toFixed(2);
       }
+    }
+
+    // Fetch OECD household data
+    const oecdHouseholdData = await fetchOECDHouseholdData(country);
+    if (oecdHouseholdData) {
+      data.oecdHouseholdData = oecdHouseholdData;
     }
 
     return data;

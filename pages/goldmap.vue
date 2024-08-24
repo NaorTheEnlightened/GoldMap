@@ -34,12 +34,7 @@ import axios from 'axios';
 import { ref, onMounted, computed, h } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useMapStore } from '~/stores/map';
-// import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-// import FlagIcon from '~/components/FlagIcon.vue';
-const FlagIcon = defineAsyncComponent(() =>
-  import('~/components/FlagIcon.vue'),
-);
 
 let L;
 if (process.client) {
@@ -448,7 +443,7 @@ async function handleCountryClick(e, feature) {
 
       popupContent = `
         <h3>${name} (${iso3})</h3>
-        <table class="country-data">
+        <table class="country-data" style="font-weight: bold;">
           <tr><td>Population (${data.population.year}):</td><td>${Number(
         data.population.value,
       ).toLocaleString()}</td></tr>
@@ -458,9 +453,42 @@ async function handleCountryClick(e, feature) {
           <tr><td>Inflation (${
             data.inflation.year
           }):</td><td>${data.inflation.value?.toFixed(2)}%</td></tr>
-        </table>
       `;
 
+      if (data.oecdHouseholdData) {
+        const householdData = data.oecdHouseholdData;
+        if (householdData.HSH) {
+          popupContent += `
+            <tr><td>Household Size (${
+              householdData.HSH.year
+            }):</td><td>${Number(
+            householdData.HSH.value,
+          ).toLocaleString()}</td></tr>
+          `;
+        }
+      }
+      /**${parseInt(
+              data.oecdDisposableIncome.value / 12,
+            ).toLocaleString()} ${data.oecdDisposableIncome.currency}<br> */
+      if (data.oecdDisposableIncome) {
+        popupContent += `
+          <tr><td>Disposable Income (${
+            data.oecdDisposableIncome.year
+          }):</td><td>
+            <span style="color: #228B22; font-weight: bold;">
+            ${parseInt(
+              data.oecdDisposableIncome.usdValue / 12,
+            ).toLocaleString()}/m
+          </span></tr>
+        `;
+      }
+
+      popupContent += `
+        </table>
+      `;
+      popupContent += `
+        <a href="https://trends.google.com/trending?geo=${iso3toiso2[iso3]}" target="_blank" rel="noopener noreferrer"><img src="https://studiohawk.com.au/wp-content/uploads/2020/08/1_Fi6masemXJT3Q8YWekQCDQ-821x353-1.png" style="max-width: 100px; height: auto" alt="Google Trends"></a>
+      `;
       popup.setContent(popupContent);
 
       if (geoJsonLayer.value) {
@@ -547,7 +575,7 @@ onMounted(() => {
 }
 
 .leaflet-popup-content {
-  max-height: 300px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
@@ -560,7 +588,7 @@ onMounted(() => {
 
 :global(.custom-popup .leaflet-popup-content) {
   margin: 0;
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
