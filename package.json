@@ -24,6 +24,7 @@
     "google-auth-library": "^9.11.0",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
+    "node-cache": "^5.1.2",
     "nuxt": "^3.12.3",
     "nuxt-vue3-google-signin": "^0.0.11",
     "pinia": "^2.1.7",
