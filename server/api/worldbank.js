@@ -1,6 +1,9 @@
 import { defineEventHandler } from 'h3';
 import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
+import NodeCache from 'node-cache';
+
+const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
 
 const indicators = {
   population: 'SP.POP.TOTL',
@@ -25,6 +28,10 @@ const parser = new XMLParser({
 });
 
 const fetchOECDData = async (countryCode) => {
+  const cacheKey = `oecd_${countryCode}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
   const url = `https://sdmx.oecd.org/public/rest/data/OECD.WISE.INE,DSD_WISE_IDD@DF_IDD,1.0/${countryCode}.A.INC_DISP.MEDIAN.XDC_HH_EQ._T.METH2012.D_CUR._Z?startPeriod=2015&endPeriod=2023&dimensionAtObservation=AllDimensions&format=jsondata`;
 
   try {
@@ -59,7 +66,9 @@ const fetchOECDData = async (countryCode) => {
         latestData = { year, value: disposableIncome, currency };
       }
     }
-
+    if (latestData) {
+      cache.set(cacheKey, latestData);
+    }
     return latestData;
   } catch (error) {
     console.error('Error fetching OECD data:', error);
@@ -68,6 +77,9 @@ const fetchOECDData = async (countryCode) => {
 };
 
 const fetchOECDHouseholdData = async (countryCode) => {
+  const cacheKey = `oecd_household_${countryCode}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
   const url = `https://sdmx.oecd.org/public/rest/data/OECD.WISE.INE,DSD_WISE_IDD@DF_IDD,1.0/${countryCode}.A.HSH..._T..D_CUR.?startPeriod=2015&dimensionAtObservation=AllDimensions&format=jsondata`;
 
   try {
@@ -106,6 +118,10 @@ const fetchOECDHouseholdData = async (countryCode) => {
       }
     }
 
+    if (latestData) {
+      cache.set(cacheKey, latestData);
+    }
+
     return latestData;
   } catch (error) {
     console.error('Error fetching OECD household data:', error);
@@ -114,11 +130,16 @@ const fetchOECDHouseholdData = async (countryCode) => {
 };
 
 const convertCurrency = async (amount, fromCurrency, toCurrency) => {
+  const cacheKey = `currency_${fromCurrency}_${toCurrency}`;
+  const cachedRate = cache.get(cacheKey);
+  if (cachedRate) return amount * cachedRate;
+
   try {
     const response = await axios.get(
       `https://v6.exchangerate-api.com/v6/702d85b9a706ac4d457eb0de/latest/${fromCurrency}`,
     );
     const rate = response.data.conversion_rates[toCurrency];
+    cache.set(cacheKey, rate, 3600); // Cache exchange rate for 1 hour
     return amount * rate;
   } catch (error) {
     console.error('Error converting currency:', error);
@@ -129,6 +150,10 @@ const convertCurrency = async (amount, fromCurrency, toCurrency) => {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const { country } = query;
+
+  const cacheKey = `worldbank_${country}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
 
   try {
     // Fetch World Bank data (existing code)
@@ -182,6 +207,7 @@ export default defineEventHandler(async (event) => {
       data.oecdHouseholdData = oecdHouseholdData;
     }
 
+    cache.set(cacheKey, data);
     return data;
   } catch (error) {
     console.error('Error fetching data:', error);
