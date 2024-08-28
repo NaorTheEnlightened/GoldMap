@@ -12,6 +12,8 @@ const indicators = {
   // netMigration: 'SM.POP.NETM',
   // lifeExpectancy: 'SP.DYN.LE00.IN',
   inflation: 'NY.GDP.DEFL.KD.ZG',
+  internetUsage: 'IT.NET.USER.ZS',
+  monthlyIncome: 'NY.ADJ.NNTY.PC.CD',
   // fertilityRate: 'SP.DYN.TFRT.IN',
   // militaryExpenditure: 'MS.MIL.XPND.GD.ZS',
   // timeToStartBusiness: 'IC.REG.DURS'

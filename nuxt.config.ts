@@ -8,6 +8,11 @@ export default defineNuxtConfig({
     '~/plugins/auth.js',
     { src: '~/plugins/vue-leaflet.client.js', mode: 'client' },
   ],
+  app: {
+    head: {
+      title: 'Gold Map',
+    },
+  },
   build: {
     transpile: ['leaflet'],
   },

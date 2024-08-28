@@ -452,7 +452,17 @@ async function handleCountryClick(e, feature) {
           }):</td><td><span style="color: green; font-weight: bold;">${formattedGDP}</span></td></tr>
           <tr><td>Inflation (${
             data.inflation.year
-          }):</td><td>${data.inflation.value?.toFixed(2)}%</td></tr>
+          }):</td><td><span style="color: red; font-weight: bold;">${data.inflation.value?.toFixed(
+        2,
+      )}%</span></td></tr>
+            <tr><td>Monthly Income (${
+              data.monthlyIncome.year
+            }):</td><td><span style="color: green; font-weight: bold;">$${parseInt(
+        data.monthlyIncome.value / 12,
+      ).toLocaleString()}/m</span></td></tr>
+          <tr><td>Internet Usage (${
+            data.internetUsage.year
+          }):</td><td>${data.internetUsage.value.toFixed(2)}%</td></tr>
       `;
 
       if (data.oecdHouseholdData) {

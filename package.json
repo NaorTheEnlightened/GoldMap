@@ -10,9 +10,6 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.12.1",
     "@pinia/nuxt": "^0.5.1",
